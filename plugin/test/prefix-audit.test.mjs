@@ -89,3 +89,38 @@ test('ignores missing or non-UUID conversation IDs and isolates UI/journal error
   broken.sample(ID, '/tmp/does-not-exist');
   assert.match(broken.summary(), /审计暂不可用|等待原生采样/);
 });
+
+test('reset clears audit state and restore drops entries prior to reset marker', () => {
+  const events = [];
+  let updates = 0;
+  const audit = new AgyPrefixAudit(e => events.push(e), () => updates++);
+  audit.recordLocal('sys-before', [], { name: 'acp-agent' });
+  assert.equal(events.length, 1);
+
+  const geminiDir = fs.mkdtempSync(path.join(os.tmpdir(), 'pi-acp-audit-reset-'));
+  try {
+    const convDir = path.join(geminiDir, 'antigravity-cli', 'conversations');
+    fs.mkdirSync(convDir, { recursive: true });
+    const db = new DatabaseSync(path.join(convDir, `${ID}.db`));
+    db.exec('CREATE TABLE gen_metadata (idx INTEGER PRIMARY KEY, data BLOB)');
+    db.prepare('INSERT INTO gen_metadata VALUES (?, ?)').run(0, metadata({ cache: 800 }));
+    db.close();
+    audit.sample(ID, geminiDir);
+  } finally {
+    fs.rmSync(geminiDir, { recursive: true, force: true });
+  }
+  assert.match(audit.summary(), /98\.8%/);
+
+  const beforeUpdates = updates;
+  audit.reset();
+  assert.ok(updates > beforeUpdates);
+  assert.match(audit.summary(), /等待原生采样/);
+
+  const entries = [
+    ...events.map(data => ({ type: 'custom', customType: PREFIX_AUDIT_ENTRY, data })),
+    { type: 'custom', customType: 'antigravity-acp:reset', data: { version: 1 } },
+  ];
+  const restored = new AgyPrefixAudit(() => { throw new Error('restore must not journal'); });
+  restored.restore(entries);
+  assert.match(restored.summary(), /等待原生采样/);
+});

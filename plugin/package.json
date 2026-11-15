@@ -21,7 +21,7 @@
     "typescript": "^7.0.2"
   },
   "scripts": {
-    "test": "node --experimental-strip-types --test test/*.test.mjs",
-    "typecheck": "tsc --noEmit"
+    "test": "node scripts/run-tests.mjs",
+    "typecheck": "node scripts/run-typecheck.mjs"
   }
 }

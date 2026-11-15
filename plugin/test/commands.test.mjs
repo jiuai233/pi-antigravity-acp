@@ -55,6 +55,7 @@ async function fixture(t, provider = 'other') {
   await handlers.get('session_start')({}, ctx);
   return {ctx, handlers, entries, notifications, statuses, registered, lifecycle,
     command: args => commands.get('agy-acp').handler(args, ctx),
+    complete: prefix => commands.get('agy-acp').getArgumentCompletions(prefix),
     usageCommand: (args = '') => commands.get('agy-usage').handler(args, ctx),
     get calls() { return calls; }, get runtime() { return runtime; }, get catalog() { return catalog; },
     select: async provider => { selected = {provider, id: 'fixture'}; await handlers.get('model_select')({model: selected}, ctx); },
@@ -122,4 +123,16 @@ test('cache subcommand, status bar, and /agy-usage argument validation behave cl
   await f.usageCommand('extra');
   assert.equal(f.notifications.at(-1).level, 'error');
   assert.match(f.notifications.at(-1).text, /\/agy-usage/);
+
+  const all = f.complete('');
+  assert.deepEqual(all.map(item => item.value), ['status', 'cache', 'doctor', 'models', 'reset']);
+  assert.deepEqual(f.complete('re').map(item => item.value), ['reset']);
+  assert.equal(f.complete('unknown'), null);
+});
+
+test('reset clears in-memory prefix audit status alongside runtime binding', async t => {
+  const f = await fixture(t, PROVIDER);
+  await f.command('reset');
+  assert.equal(f.statuses.at(-1).key, 'agy-cache');
+  assert.match(String(f.statuses.at(-1).text), /等待原生采样/);
 });

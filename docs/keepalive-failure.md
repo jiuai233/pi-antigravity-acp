@@ -78,15 +78,6 @@ WARM2 出站至保活针约 270.226 秒，至 POST_10MIN 约 600.231 秒；整�
 - **不要自动反复打 AGY／Google 真实接口或会转发真实请求的端口；不要为了本问题另搭正向 TLS 解密抓包代理。** 代理指纹差异与反复请求是用户明确点出的封号重点怀疑，但因果尚未证实。该约束不要求擅自移除正常联网所需的既有代理。
 - 不要盲目删除真实错误／低命中保护；不要把 270 秒改 240 秒或打满针数冒称解决。若未来另获明确授权要做新实验，先具备正缓存基线、明确最小问题和授权，并设计可观察第二针及真实请求命中的判据；本复盘不授权该实验。
 
-## 包内证据与源码入口
+## 证据归档与源码入口
 
-交付包内安全证据按约定复制到 `evidence/keepalive/`，本文相关链接为：
-
-- [`wire-analysis.json`](../evidence/keepalive/wire-analysis.json)：逐流最终 usage、SSE 快照、身份和指纹分析。
-- [`manifest.json`](../evidence/keepalive/manifest.json)：原件/影子身份、单字节差异、未变保护、间隔与针数。
-- [`network-events.jsonl`](../evidence/keepalive/network-events.jsonl)：冻结的脱敏网络事件；仅作离线证据，不应重放。
-- [`analyze.py`](../evidence/keepalive/analyze.py)：只从冻结数据复算的脚本，不发模型请求。
-
-原工程历史报告的来源索引见 [evidence-index.md](evidence-index.md)（旧报告全文不在包内）；保活字节记录见该报告引用的 `keepalive-bytes.json` 与汇编摘录。对应 ACP 源码入口为包内 `plugin/src/` 下的 `acp`、`native`、`runtime`、`history` 与 `message-writer` 模块：它们帮助理解 ACP 调用、原生事件映射及历史写入边界；本次二进制早停位置则由上述字节/汇编证据定位，不应把 ACP 层源码当作服务端缓存实现证明。
-
-包内可分发文档不包含旧报告全文的替代品，因此本文件将失败结果、计量、边界和接手禁忌完整写明。
+保活安全证据与只读字节／汇编记录（`wire-analysis.json`、`manifest.json`、`network-events.jsonl`、`analyze.py`、`keepalive-bytes.json` 等）归档在 Git tag `archive/handoff-kit-0.1.11` 的 `evidence/keepalive/`。对应 ACP 源码入口为 `plugin/src/` 下的 `acp`、`native`、`runtime`、`history` 与 `message-writer` 模块，用于理解 ACP 调用、原生事件映射及历史写入边界。

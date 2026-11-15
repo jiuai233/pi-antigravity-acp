@@ -24,6 +24,7 @@ export interface AgyQuotaBucket {
 export interface AgyQuotaSummary {
   capturedAt: number;
   source: "live-acp" | "seed-acp";
+  cached?: boolean;
   buckets: AgyQuotaBucket[];
 }
 
@@ -34,6 +35,8 @@ export interface LiveQuotaRuntime {
 
 export interface QueryAntigravityQuotaOptions {
   allowColdSeed?: boolean;
+  forceRefresh?: boolean;
+  maxCacheAgeMs?: number;
   signal?: AbortSignal;
   stateRoot?: string;
   cwd?: string;
@@ -58,6 +61,11 @@ interface RuntimeRegistry {
   };
   liveFlight?: Promise<AgyQuotaSummary>;
   seedFlight?: Promise<AgyQuotaSummary>;
+  cachedSummary?: AgyQuotaSummary;
+}
+
+export function clearAgyQuotaCache(): void {
+  getRegistry().cachedSummary = undefined;
 }
 
 function getRegistry(): RuntimeRegistry {
@@ -282,6 +290,16 @@ async function queryViaColdSeed(options: QueryAntigravityQuotaOptions): Promise<
 
 export async function queryAntigravityQuota(options: QueryAntigravityQuotaOptions = {}): Promise<AgyQuotaSummary> {
   const registry = getRegistry();
+  const maxCacheAgeMs = options.maxCacheAgeMs ?? 0;
+  if (
+    !options.forceRefresh
+    && maxCacheAgeMs > 0
+    && registry.cachedSummary
+    && Date.now() - registry.cachedSummary.capturedAt <= maxCacheAgeMs
+  ) {
+    return { ...registry.cachedSummary, cached: true };
+  }
+
   const candidates = [...registry.runtimes.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([runtime]) => runtime)
@@ -296,7 +314,9 @@ export async function queryAntigravityQuota(options: QueryAntigravityQuotaOption
         for (const runtime of candidates) {
           try {
             const raw = await runtime.readQuotaSummary(options.signal);
-            return parseAgyQuotaSummary(raw, Date.now(), "live-acp");
+            const summary = parseAgyQuotaSummary(raw, Date.now(), "live-acp");
+            registry.cachedSummary = summary;
+            return summary;
           } catch (error) {
             err = error;
           }
@@ -322,7 +342,10 @@ export async function queryAntigravityQuota(options: QueryAntigravityQuotaOption
   }
 
   if (registry.seedFlight) return registry.seedFlight;
-  const seedTask = queryViaColdSeed(options);
+  const seedTask = queryViaColdSeed(options).then((summary) => {
+    registry.cachedSummary = summary;
+    return summary;
+  });
   registry.seedFlight = seedTask;
   void seedTask.finally(() => {
     if (registry.seedFlight === seedTask) registry.seedFlight = undefined;

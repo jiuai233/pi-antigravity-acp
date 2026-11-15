@@ -37,9 +37,9 @@ MCP 桥只转发，不私自执行工具，不预填 ACK／成功。原生 read_
 - 摘要：独立 runtime，主原生会话不被摘要改写；之后导入 Pi 压后投影。
 - 传输改变：更换必要进程，历史恢复按有效边界，不把代理变化和历史变化混为一谈。
 
-## Pi Web 参考怎么用
+## Pi Web 参考
 
-host-reference/piweb 来自 SOURCE.json 指定的独立分支提交；不是主工作区的混合未提交快照，也不是完整应用。包括 NativeToolCard、native-tool-activity、MessageView/ChatWindow、wire／streaming／reader／types 和 rpc-manager 接缝。
+独立分支的 Pi Web 兼容参考（NativeToolCard、native-tool-activity、MessageView/ChatWindow、wire／streaming／reader／types 和 rpc-manager 接缝）归档在 Git tag `archive/handoff-kit-0.1.11` 的 `host-reference/piweb/` 中。
 
 移植时保持完整链路：appendEntry(pi-native-tool) → wire 传输 → 原生工具状态按调用 ID 合并 → streaming 与历史 reader → 工具卡展示。刷新后应仍只有一条只读活动，不能生成模型消息或 Pi 可执行 toolCall。Web 的组件、i18n、样式和消息类型要接目标应用已有实现，不按这些片段单独 npm test。ACP 自身的映射测试可独立运行。
 
@@ -52,4 +52,4 @@ host-reference/piweb 来自 SOURCE.json 指定的独立分支提交；不是主�
 
 模型目录先用 Pi agent 目录内上次成功缓存或内置目录；选中 ACP 后按有效期刷新，`/agy-acp models` 手动调用 `agy models`，失败保留上次成功目录并报告原始错误。非 ACP 普通会话不会为此启动 AGY。当前原生错误不推进已接受检查点，历史旧错误不污染本轮成功。
 
-0.1.11 在插件统一 message writer 失败出口区分确定的原生终态与传输异常：稳定摘要供 Pi 分类，同条正文和 diagnostics 保留完整原文，`stopReason: error` 不变；摘要独立 runtime 同样经过出口。此策略不新增宿主补丁、原生重试引擎或全局 retry 设置；既有 Pi 1.5.2 overlay 仅是开发兼容基线。错误矩阵与升级限制见 [error-recovery.md](error-recovery.md)。实际完成状态由 [../VERIFICATION.md](../VERIFICATION.md) 记录。
+0.1.11 在插件统一 message writer 失败出口区分确定的原生终态与传输异常：稳定摘要供 Pi 分类，同条正文和 diagnostics 保留完整原文，`stopReason: error` 不变；摘要独立 runtime 同样经过出口。此策略不新增宿主补丁、原生重试引擎或全局 retry 设置。错误矩阵与升级限制见 [error-recovery.md](error-recovery.md)。

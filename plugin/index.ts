@@ -105,7 +105,7 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
     const branch = ctx.sessionManager.getBranch();
     current().restore(branch);
     auditUI = ctx.hasUI && ctx.model?.provider === PROVIDER ? ctx.ui : undefined;
-    audit.restore(branch);
+    audit.restore(branch, RESET_ENTRY);
     ensureCleanup();
     await refreshModels(ctx);
   });
@@ -115,7 +115,7 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
     const branch = ctx.sessionManager.getBranch();
     current().restore(branch);
     auditUI = ctx.hasUI && ctx.model?.provider === PROVIDER ? ctx.ui : undefined;
-    audit.restore(branch);
+    audit.restore(branch, RESET_ENTRY);
   });
   pi.on("before_agent_start", async (_event, ctx) => { context = ctx; await refreshModels(ctx); });
   pi.on("session_compact", (_event, ctx) => { context = ctx; current().invalidateProjection(); });
@@ -155,8 +155,20 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
       await openAgyUsagePicker(ctx);
     },
   });
+  const ACP_SUBCOMMANDS = [
+    { value: "status", label: "status", description: "查看当前 ACP 会话绑定与上次缓存命中" },
+    { value: "cache", label: "cache", description: "查看详细前缀与原生采样审计" },
+    { value: "doctor", label: "doctor", description: "查看本地运行时、模型目录与审计诊断" },
+    { value: "models", label: "models", description: "手动从 AGY 刷新可用模型目录" },
+    { value: "reset", label: "reset", description: "停止原生执行并清除 ACP 会话绑定" },
+  ];
   pi.registerCommand("agy-acp", {
     description: "查看 ACP 原生会话；cache 查看缓存审计，reset 重建原生会话，doctor 本地诊断，models 刷新模型目录。",
+    getArgumentCompletions: argumentPrefix => {
+      const prefix = argumentPrefix.trim().toLowerCase();
+      const matches = ACP_SUBCOMMANDS.filter(item => item.value.startsWith(prefix));
+      return matches.length ? matches : null;
+    },
     handler: async (args, ctx) => {
       context = ctx;
       const command = args.trim();
@@ -169,6 +181,7 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
         await ctx.waitForIdle();
         await current().reset();
         pendingBindings.delete(key());
+        audit.reset();
         pi.appendEntry(RESET_ENTRY, { version: 1, timestamp: Date.now() });
         ctx.ui.notify("已清除 ACP 原生绑定。Pi 历史保留；下次输入将新建原生会话，不回灌旧对话。", "info");
       } else if (command === "doctor") {

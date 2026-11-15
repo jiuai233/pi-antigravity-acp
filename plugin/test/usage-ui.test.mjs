@@ -78,3 +78,34 @@ test('openAgyUsagePicker notifies directly when hasUI is false and supports Refr
   assert.equal(notifications.at(-1).level, 'error');
   assert.match(notifications.at(-1).text, /quota backend offline/);
 });
+
+test('formatAgyQuotaReport labels cached source and openAgyUsagePicker passes forceRefresh only on Refresh', async () => {
+  const now = new Date(2026, 10, 15, 15, 5, 0);
+  const cachedReport = formatAgyQuotaReport({
+    capturedAt: now.getTime(),
+    source: 'seed-acp',
+    cached: true,
+    buckets: [{ id: 'g-5h', label: '5 小时额度', groupLabel: 'Gemini', usedPercent: 20, remainingPercent: 80, windowMinutes: 300, resetsAt: null }],
+  }, now);
+  assert.match(cachedReport, /Source: seed ACP \(cached\) · 15:05:00/);
+
+  const seenOptions = [];
+  const choices = ['Refresh', 'Close'];
+  await openAgyUsagePicker({
+    hasUI: true,
+    mode: 'rpc',
+    ui: {
+      notify: () => {},
+      select: async () => choices.shift(),
+    },
+  }, async (_signal, options) => {
+    seenOptions.push(options);
+    return {
+      capturedAt: now.getTime(),
+      source: 'live-acp',
+      cached: !options?.forceRefresh,
+      buckets: [{ id: 'g-5h', label: '5 小时额度', groupLabel: 'Gemini', usedPercent: 10, remainingPercent: 90, windowMinutes: 300, resetsAt: null }],
+    };
+  });
+  assert.deepEqual(seenOptions, [{ forceRefresh: false }, { forceRefresh: true }]);
+});

@@ -215,15 +215,29 @@ export class AgyPrefixAudit {
     this.#onUpdate = onUpdate;
   }
 
-  restore(entries: readonly { type: string; customType?: string; data?: unknown }[]): void {
+  reset(): void {
+    this.#clearState();
+    this.#refresh();
+  }
+
+  #clearState(): void {
     this.#local = undefined;
     this.#native = undefined;
     this.#faults.clear();
     this.#conversationId = undefined;
     this.#generations.clear();
     this.#cursor = -1;
+  }
+
+  restore(entries: readonly { type: string; customType?: string; data?: unknown }[], resetType = "antigravity-acp:reset"): void {
+    this.#clearState();
     for (const entry of entries) {
-      if (!entry || entry.type !== "custom" || entry.customType !== PREFIX_AUDIT_ENTRY) continue;
+      if (!entry || entry.type !== "custom") continue;
+      if (entry.customType === resetType) {
+        this.#clearState();
+        continue;
+      }
+      if (entry.customType !== PREFIX_AUDIT_ENTRY) continue;
       const event = entry.data;
       if (!validAuditEvent(event)) { this.#faults.set("restore", "InvalidEntry"); continue; }
       if (event.kind === "local") this.#local = event;

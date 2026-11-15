@@ -28,11 +28,11 @@
 | 计量错误当0或把多代累计当水位 | inference差分计费，水位取最后一代；缺数据标unknown，不把已生成正文作废 |
 | 后台保活请求发出就宣称续期成功 | 本轮两次热基线均0、首针完整仍0、无第二针、600秒后0。详见保活失败复盘 |
 
-## 证据入口
+## 证据入口（归档于 `archive/handoff-kit-0.1.11`）
 
-- 身份／429：evidence/prompt-identity/ 两轮summary与73工具公开结果；编译快照是零生成验证。
-- 保活：evidence/keepalive/ 完整安全JSONL、最终分析、单字节manifest及汇编摘录。
-- 其他历史接缝：本包plugin源码与对应测试给出当前行为；完整旧live报告未随包整份分发，其原仓路径见 docs/evidence-index.md，接手者不能仅凭历史报告名当成现场成功。
+- 身份／429：`evidence/prompt-identity/` 两轮 summary 与 73 工具公开结果。
+- 保活：`evidence/keepalive/` 完整安全 JSONL、最终分析、单字节 manifest 及汇编摘录。
+- 其他历史接缝：由 `plugin/` 源码与对应测试定义当前行为。
 
 
 ## 错误恢复新增检查点

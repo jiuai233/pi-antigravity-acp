@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import {
   AGY_ACP_QUOTA_BRIDGE_SYMBOL,
+  clearAgyQuotaCache,
   ensureAgyQuotaBridge,
   parseAgyQuotaSummary,
   queryAntigravityQuota,
@@ -223,4 +224,43 @@ test("queryAntigravityQuota respects allowColdSeed=false and cleans up seed .pb/
   const convDir = path.join(stateRoot, "_quota-seed", "gemini", "antigravity-cli", "conversations");
   await assert.rejects(() => access(path.join(convDir, `${seedSessionId}.pb`)));
   await assert.rejects(() => access(path.join(convDir, `${seedSessionId}.db`)));
+});
+
+test("queryAntigravityQuota reuses short-lived cache only when maxCacheAgeMs > 0 and bypasses on forceRefresh", async (t) => {
+  clearAgyQuotaCache();
+  let calls = 0;
+  const runtime = {
+    hasLiveNativeControl: () => true,
+    readQuotaSummary: async () => {
+      calls += 1;
+      return {
+        groups: [
+          {
+            displayName: "Gemini",
+            buckets: [{ bucketId: "session", remainingFraction: calls === 1 ? 0.9 : 0.7 }],
+          },
+        ],
+      };
+    },
+  };
+  registerLiveAcpRuntime(runtime);
+  t.after(() => {
+    unregisterLiveAcpRuntime(runtime);
+    clearAgyQuotaCache();
+  });
+
+  const first = await queryAntigravityQuota({ maxCacheAgeMs: 60_000 });
+  assert.equal(calls, 1);
+  assert.equal(first.cached, undefined);
+  assert.equal(first.buckets[0].remainingPercent, 90);
+
+  const cached = await queryAntigravityQuota({ maxCacheAgeMs: 60_000 });
+  assert.equal(calls, 1);
+  assert.equal(cached.cached, true);
+  assert.equal(cached.buckets[0].remainingPercent, 90);
+
+  const forced = await queryAntigravityQuota({ maxCacheAgeMs: 60_000, forceRefresh: true });
+  assert.equal(calls, 2);
+  assert.equal(forced.cached, undefined);
+  assert.equal(forced.buckets[0].remainingPercent, 70);
 });

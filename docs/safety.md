@@ -18,12 +18,10 @@
 
 身份提示与429的对照是另一条证据，不能用它解释403停用，也不能据此宣称停用账号已恢复。
 
-## 这份包怎样验证
+## 验证边界
 
-- scripts/verify.py：本地文件大小、哈希和清单。
-- plugin/test：假ACP／回环MCP／合成历史与媒体。
-- evidence/keepalive/analyze.py：冻结安全事件的离线复算。
+- `plugin/test/`：假 ACP／回环 MCP／合成历史与媒体离线单测。
 - 端口相关排障先查进程归属、监听信息和已有日志，不向业务接口循环发送请求。
-- 现有源码保留src/network-monitor.ts以保持工程完整；本包不附观察器、不启用它，也不复制原作者的代理、证书或认证配置。
+- 现有源码保留 `plugin/src/network-monitor.ts`；插件本身不附带观察器，也不启用抓包代理。
 
-来源：原使用者的明确交接要求；原工程账号错误脱敏记录、历史429对照及当前源码。包内可读证据见[evidence索引](evidence-index.md)。
+历史冻结证据与离线复算脚本归档在 Git tag `archive/handoff-kit-0.1.11`（`evidence/` 与 `docs/evidence-index.md`）。

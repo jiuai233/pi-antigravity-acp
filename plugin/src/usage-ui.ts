@@ -5,6 +5,7 @@ const REFRESH = "Refresh";
 const CLOSE = "Close";
 const BAR_SEGMENTS = 20;
 const LABEL_COLUMN = 16;
+export const DEFAULT_USAGE_CACHE_TTL_MS = 60_000;
 
 type LoaderResult<T> = { ok: true; value: T } | { ok: false; error: unknown } | null;
 
@@ -66,7 +67,7 @@ export function formatAgyQuotaReport(summary: AgyQuotaSummary, now: Date = new D
     for (const bucket of buckets) lines.push(formatBucket(bucket, now));
     sections.push(lines.join("\n"));
   }
-  const sourceLabel = summary.source === "live-acp" ? "live ACP" : "seed ACP";
+  const sourceLabel = `${summary.source === "live-acp" ? "live ACP" : "seed ACP"}${summary.cached ? " (cached)" : ""}`;
   const captured = new Date(summary.capturedAt);
   const timeLabel = Number.isNaN(captured.getTime())
     ? ""
@@ -109,13 +110,24 @@ function notifyError(ctx: ExtensionCommandContext, error: unknown): void {
   ctx.ui.notify(`agy-usage: ${error instanceof Error ? error.message : String(error)}`, "error");
 }
 
+export type UsageQuotaFetcher = (
+  signal?: AbortSignal,
+  options?: { forceRefresh?: boolean },
+) => Promise<AgyQuotaSummary>;
+
+const defaultUsageFetcher: UsageQuotaFetcher = (signal, options) =>
+  queryAntigravityQuota({
+    signal,
+    ...(options?.forceRefresh ? { forceRefresh: true } : { maxCacheAgeMs: DEFAULT_USAGE_CACHE_TTL_MS }),
+  });
+
 export async function openAgyUsagePicker(
   ctx: ExtensionCommandContext,
-  fetchQuota: (signal?: AbortSignal) => Promise<AgyQuotaSummary> = (signal) => queryAntigravityQuota({ signal }),
+  fetchQuota: UsageQuotaFetcher = defaultUsageFetcher,
 ): Promise<void> {
   if (!ctx.hasUI) {
     try {
-      ctx.ui.notify(formatAgyQuotaReport(await fetchQuota()), "info");
+      ctx.ui.notify(formatAgyQuotaReport(await fetchQuota(undefined, { forceRefresh: false })), "info");
     } catch (error) {
       notifyError(ctx, error);
     }
@@ -124,7 +136,9 @@ export async function openAgyUsagePicker(
 
   const controller = new AbortController();
   try {
-    let summary = await runWithLoader(ctx, "Checking agy quota…", controller.signal, fetchQuota);
+    let summary = await runWithLoader(ctx, "Checking agy quota…", controller.signal, (signal) =>
+      fetchQuota(signal, { forceRefresh: false }),
+    );
     if (!summary) return;
     while (!controller.signal.aborted) {
       const action = await ctx.ui.select(formatAgyQuotaReport(summary), [REFRESH, CLOSE], {
@@ -133,7 +147,9 @@ export async function openAgyUsagePicker(
       if (!action || action === CLOSE) return;
       if (action === REFRESH) {
         try {
-          const refreshed = await runWithLoader(ctx, "Refreshing usage…", controller.signal, fetchQuota);
+          const refreshed = await runWithLoader(ctx, "Refreshing usage…", controller.signal, (signal) =>
+            fetchQuota(signal, { forceRefresh: true }),
+          );
           if (refreshed) summary = refreshed;
         } catch (error) {
           if (isAbortError(error)) return;
