@@ -1,0 +1,61 @@
+{
+  "name": "@jiuai233/pi-antigravity-acp",
+  "version": "0.1.11",
+  "type": "module",
+  "description": "Antigravity native ACP sessions with MCP tool bridging, quota usage panel, and structured history sync.",
+  "keywords": [
+    "pi",
+    "pi-package",
+    "pi-extension",
+    "antigravity",
+    "agy",
+    "acp"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jiuai233/pi-antigravity-acp.git"
+  },
+  "homepage": "https://github.com/jiuai233/pi-antigravity-acp#readme",
+  "bugs": {
+    "url": "https://github.com/jiuai233/pi-antigravity-acp/issues"
+  },
+  "files": [
+    "plugin/index.ts",
+    "plugin/src/",
+    "plugin/resources/",
+    "plugin/README.md",
+    "plugin/THIRD_PARTY.md",
+    "README.md",
+    "THIRD_PARTY.md"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
+  "pi": {
+    "extensions": [
+      "./plugin/index.ts"
+    ]
+  },
+  "dependencies": {
+    "@agentclientprotocol/sdk": "2.6.0",
+    "@bufbuild/protobuf": "2.16.0",
+    "zod": "3.25.76"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=1.5.2",
+    "@earendil-works/pi-coding-agent": ">=1.5.2"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "test": "npm --prefix plugin test",
+    "typecheck": "npm --prefix plugin run typecheck"
+  }
+}
