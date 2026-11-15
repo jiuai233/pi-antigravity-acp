@@ -1,0 +1,26 @@
+{
+  "source": "C:\\Users\\67570\\AppData\\Local\\agy\\bin\\agy.exe",
+  "shadow": "E:\\pi-stack\\tmp\\agy-keepalive-shadow-20261113\\agy-shadow.exe",
+  "sourceSha256": "a30f863bc4f2c27f913e212e3eea13ebf57f181a8bfbcd1fada4d00da3e63444",
+  "shadowSha256": "150e8564514c97e053100bd30434fe6216ad7908088170c409e38e5d2660a93d",
+  "changedByteCount": 1,
+  "patch": {
+    "fileOffset": 52288359,
+    "before": "74aa",
+    "after": "ebaa"
+  },
+  "unchangedGuards": {
+    "52283296": "b806000000c3",
+    "52287395": "0f86c1000000",
+    "52287350": "0f852a010000",
+    "52285908": "000c41dd3e000000"
+  },
+  "sourceMonitorConfigSha256": "61e5fcf47841b1a272429562d0565578c29b48f355257531212927ec662c0ce2",
+  "intervalSeconds": 270,
+  "idleObservationSeconds": 600,
+  "maxPings": 6,
+  "productionModified": false,
+  "networkPort": 18092,
+  "model": "gemini-4-hydrogen",
+  "reasoning": "low"
+}

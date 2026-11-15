@@ -1,0 +1,350 @@
+{
+  "probeFinished": true,
+  "probeError": null,
+  "realHydrogenRequests": 3,
+  "identifiedKeepaliveRequests": 1,
+  "requests": [
+    {
+      "flowId": "f382046c-9d44-4f0e-914c-e91c2cece465",
+      "atUTC8": "2026-11-13T10:59:24.539247+08:00",
+      "monotonicNs": 8524464871400,
+      "model": "gemini-3.5-flash-lite",
+      "requestType": "checkpoint",
+      "keepaliveOrdinal": null,
+      "keepaliveFields": {},
+      "requestIdHasKeepalive": false,
+      "maxOutputTokens": null,
+      "fingerprints": {
+        "systemInstruction": "e7f59fbf9bb173bafb1279f9862b7db9326d1776b21d90251fdd0cb25ff69b0e",
+        "generationConfig": "b0e1e4629774fda845dadbacc43d70ec8c8257b0c91cd9d47616377fbe6c98cf",
+        "sessionId": "004252b3135db76525e510be715841b203fa81b2e9a8d196abeb727e2d6afcca"
+      },
+      "messageHmacs": [
+        "3ddd76ea714c9a8bbfae06c07a9e0d10a71b9747f27755d1d5bcc1a85817cd2c"
+      ],
+      "status": "complete",
+      "httpStatus": 200,
+      "semanticComplete": true,
+      "sseEvents": 4,
+      "usage": {
+        "promptTokenCount": 57174,
+        "candidatesTokenCount": 5,
+        "totalTokenCount": 57179
+      },
+      "cacheReadTokens": 0,
+      "cacheReadSource": "protobuf-default-on-complete",
+      "cacheHitRatio": 0.0,
+      "snapshots": [
+        {
+          "event": 1,
+          "usage": {
+            "promptTokenCount": 57174,
+            "totalTokenCount": 57174
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 2,
+          "usage": {
+            "promptTokenCount": 57174,
+            "candidatesTokenCount": 2,
+            "totalTokenCount": 57176
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 3,
+          "usage": {
+            "promptTokenCount": 57174,
+            "candidatesTokenCount": 5,
+            "totalTokenCount": 57179
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 4,
+          "usage": {
+            "promptTokenCount": 57174,
+            "candidatesTokenCount": 5,
+            "totalTokenCount": 57179
+          },
+          "finishReasons": [
+            "STOP"
+          ]
+        }
+      ]
+    },
+    {
+      "flowId": "ab8e72e1-5eab-4b2b-abc1-bcabe8b7d4dc",
+      "atUTC8": "2026-11-13T10:59:24.571663+08:00",
+      "monotonicNs": 8524496853300,
+      "model": "gemini-4-hydrogen-low",
+      "requestType": "agent",
+      "keepaliveOrdinal": null,
+      "keepaliveFields": {},
+      "requestIdHasKeepalive": false,
+      "maxOutputTokens": 262144,
+      "fingerprints": {
+        "systemInstruction": "c1939bbe6d7ee0c5f54817dcd1b146e8c7977af6aa556250188cbe0d272ad45c",
+        "tools": "b6361259e3549300e92319222d2ec7ab4f2e74598102ed49fc72a7c1859e0971",
+        "generationConfig": "7fe2344f9c736aab8f759c1c3ba8ee9934e56a229b3020adc1ec3898063bf475",
+        "sessionId": "004252b3135db76525e510be715841b203fa81b2e9a8d196abeb727e2d6afcca",
+        "labels": "cf1c25551552c1e9e7ea6e3829ff8d437f56ad7f76eab7888635757a88b88cf9"
+      },
+      "messageHmacs": [
+        "395935b42d3b42f8b4208498484fe0b3af6e053cb041ee4dcf3293508521868c"
+      ],
+      "status": "complete",
+      "httpStatus": 200,
+      "semanticComplete": true,
+      "sseEvents": 4,
+      "usage": {
+        "promptTokenCount": 54024,
+        "candidatesTokenCount": 61,
+        "thoughtsTokenCount": 74,
+        "totalTokenCount": 54159
+      },
+      "cacheReadTokens": 0,
+      "cacheReadSource": "protobuf-default-on-complete",
+      "cacheHitRatio": 0.0,
+      "snapshots": [
+        {
+          "event": 1,
+          "usage": {
+            "promptTokenCount": 53929,
+            "candidatesTokenCount": 57,
+            "thoughtsTokenCount": 74,
+            "totalTokenCount": 54060
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 2,
+          "usage": {
+            "promptTokenCount": 53929,
+            "candidatesTokenCount": 57,
+            "thoughtsTokenCount": 74,
+            "totalTokenCount": 54060
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 3,
+          "usage": {
+            "promptTokenCount": 53929,
+            "candidatesTokenCount": 57,
+            "thoughtsTokenCount": 74,
+            "totalTokenCount": 54060
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 4,
+          "usage": {
+            "promptTokenCount": 54024,
+            "candidatesTokenCount": 61,
+            "thoughtsTokenCount": 74,
+            "totalTokenCount": 54159
+          },
+          "finishReasons": [
+            "STOP"
+          ]
+        }
+      ]
+    },
+    {
+      "flowId": "951b2e89-506d-496e-9a49-df9005c32d7c",
+      "atUTC8": "2026-11-13T10:59:30.692664+08:00",
+      "monotonicNs": 8530617640700,
+      "model": "gemini-4-hydrogen-low",
+      "requestType": "agent",
+      "keepaliveOrdinal": null,
+      "keepaliveFields": {},
+      "requestIdHasKeepalive": false,
+      "maxOutputTokens": 262144,
+      "fingerprints": {
+        "systemInstruction": "c1939bbe6d7ee0c5f54817dcd1b146e8c7977af6aa556250188cbe0d272ad45c",
+        "tools": "b6361259e3549300e92319222d2ec7ab4f2e74598102ed49fc72a7c1859e0971",
+        "generationConfig": "7fe2344f9c736aab8f759c1c3ba8ee9934e56a229b3020adc1ec3898063bf475",
+        "sessionId": "004252b3135db76525e510be715841b203fa81b2e9a8d196abeb727e2d6afcca",
+        "labels": "ddec6a61c0bd3348941e25ceca3cdb0eff5a660ab4884df413add264bbfda546"
+      },
+      "messageHmacs": [
+        "395935b42d3b42f8b4208498484fe0b3af6e053cb041ee4dcf3293508521868c",
+        "7a542e3e68505f91db1aa609176218ce98c25bac096733936307263d2f2a30c7",
+        "a304267f84d39dfb97b8b31948561e438e504a447908727368bdbc442901843b"
+      ],
+      "status": "complete",
+      "httpStatus": 200,
+      "semanticComplete": true,
+      "sseEvents": 2,
+      "usage": {
+        "promptTokenCount": 54235,
+        "candidatesTokenCount": 9,
+        "thoughtsTokenCount": 31,
+        "totalTokenCount": 54275
+      },
+      "cacheReadTokens": 0,
+      "cacheReadSource": "protobuf-default-on-complete",
+      "cacheHitRatio": 0.0,
+      "snapshots": [
+        {
+          "event": 1,
+          "usage": {
+            "promptTokenCount": 54126,
+            "candidatesTokenCount": 5,
+            "thoughtsTokenCount": 31,
+            "totalTokenCount": 54162
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 2,
+          "usage": {
+            "promptTokenCount": 54235,
+            "candidatesTokenCount": 9,
+            "thoughtsTokenCount": 31,
+            "totalTokenCount": 54275
+          },
+          "finishReasons": [
+            "STOP"
+          ]
+        }
+      ]
+    },
+    {
+      "flowId": "b52da4f8-807e-45ed-8694-562411ab154b",
+      "atUTC8": "2026-11-13T11:04:00.918298+08:00",
+      "monotonicNs": 8800843098400,
+      "model": "gemini-4-hydrogen-low",
+      "requestType": "agent",
+      "keepaliveOrdinal": null,
+      "keepaliveFields": {
+        "prompt_cache_keep_alive": "true"
+      },
+      "requestIdHasKeepalive": false,
+      "maxOutputTokens": 1,
+      "fingerprints": {
+        "systemInstruction": "c1939bbe6d7ee0c5f54817dcd1b146e8c7977af6aa556250188cbe0d272ad45c",
+        "tools": "b6361259e3549300e92319222d2ec7ab4f2e74598102ed49fc72a7c1859e0971",
+        "generationConfig": "9187546d71614e8a34930463fe3f6774805c1742f5920aae3fa4f9465daf4999",
+        "sessionId": "004252b3135db76525e510be715841b203fa81b2e9a8d196abeb727e2d6afcca",
+        "labels": "74eb2addc3931df6d39d2d3d2537da4c79c7329ce2dd4e702901b42166a2936c"
+      },
+      "messageHmacs": [
+        "395935b42d3b42f8b4208498484fe0b3af6e053cb041ee4dcf3293508521868c",
+        "7a542e3e68505f91db1aa609176218ce98c25bac096733936307263d2f2a30c7",
+        "8e6582dc93058acaaefd2a86435961e9c1019f6aa9eccea15c41e303d32f055f"
+      ],
+      "status": "complete",
+      "httpStatus": 200,
+      "semanticComplete": true,
+      "sseEvents": 1,
+      "usage": {
+        "promptTokenCount": 54170,
+        "candidatesTokenCount": 1,
+        "totalTokenCount": 54171
+      },
+      "cacheReadTokens": 0,
+      "cacheReadSource": "protobuf-default-on-complete",
+      "cacheHitRatio": 0.0,
+      "snapshots": [
+        {
+          "event": 1,
+          "usage": {
+            "promptTokenCount": 54170,
+            "candidatesTokenCount": 1,
+            "totalTokenCount": 54171
+          },
+          "finishReasons": [
+            "MAX_TOKENS"
+          ]
+        }
+      ]
+    },
+    {
+      "flowId": "841238eb-5a33-45b7-ad39-8c71ec285a41",
+      "atUTC8": "2026-11-13T11:09:30.924087+08:00",
+      "monotonicNs": 9130855007200,
+      "model": "gemini-4-hydrogen-low",
+      "requestType": "agent",
+      "keepaliveOrdinal": null,
+      "keepaliveFields": {},
+      "requestIdHasKeepalive": false,
+      "maxOutputTokens": 262144,
+      "fingerprints": {
+        "systemInstruction": "c1939bbe6d7ee0c5f54817dcd1b146e8c7977af6aa556250188cbe0d272ad45c",
+        "tools": "b6361259e3549300e92319222d2ec7ab4f2e74598102ed49fc72a7c1859e0971",
+        "generationConfig": "7fe2344f9c736aab8f759c1c3ba8ee9934e56a229b3020adc1ec3898063bf475",
+        "sessionId": "004252b3135db76525e510be715841b203fa81b2e9a8d196abeb727e2d6afcca",
+        "labels": "270c03ff6de0def4e096347ad666b0fc5a6fcb3f7e0b8c226d098abc43ddeaac"
+      },
+      "messageHmacs": [
+        "395935b42d3b42f8b4208498484fe0b3af6e053cb041ee4dcf3293508521868c",
+        "7a542e3e68505f91db1aa609176218ce98c25bac096733936307263d2f2a30c7",
+        "a304267f84d39dfb97b8b31948561e438e504a447908727368bdbc442901843b",
+        "8ddc089baf4f366dce5a8d4c2a69913ffa0267b7d8e8fd98a7eeb1c59ced431d",
+        "cf93e13756a2bf2354c2c0d8daf9f0c41aa651397683b80061a7406c9b8edefd"
+      ],
+      "status": "complete",
+      "httpStatus": 200,
+      "semanticComplete": true,
+      "sseEvents": 2,
+      "usage": {
+        "promptTokenCount": 54353,
+        "candidatesTokenCount": 11,
+        "thoughtsTokenCount": 30,
+        "totalTokenCount": 54394
+      },
+      "cacheReadTokens": 0,
+      "cacheReadSource": "protobuf-default-on-complete",
+      "cacheHitRatio": 0.0,
+      "snapshots": [
+        {
+          "event": 1,
+          "usage": {
+            "promptTokenCount": 54230,
+            "candidatesTokenCount": 7,
+            "thoughtsTokenCount": 30,
+            "totalTokenCount": 54267
+          },
+          "finishReasons": []
+        },
+        {
+          "event": 2,
+          "usage": {
+            "promptTokenCount": 54353,
+            "candidatesTokenCount": 11,
+            "thoughtsTokenCount": 30,
+            "totalTokenCount": 54394
+          },
+          "finishReasons": [
+            "STOP"
+          ]
+        }
+      ]
+    }
+  ],
+  "warmBaselineEstablished": false,
+  "realRequestPrefixAppend": true,
+  "usageTotals": {
+    "promptTokenCount": 273956,
+    "cachedContentTokenCount": 0,
+    "candidatesTokenCount": 87,
+    "thoughtsTokenCount": 135,
+    "totalTokenCount": 274178
+  },
+  "generationCounts": {
+    "WARM2_trajectory": 2,
+    "beforePost": 2,
+    "afterPost": 3
+  },
+  "stepCounts": {
+    "WARM2_trajectory": 4,
+    "beforePost": 4,
+    "afterPost": 6
+  },
+  "nativeToolNotifications": 0,
+  "productionSourceUnchanged": true,
+  "productionMonitorConfigUnchanged": true
+}

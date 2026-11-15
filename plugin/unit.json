@@ -1,0 +1,9 @@
+{
+  "id": "plugin.antigravity-acp",
+  "kind": "plugin",
+  "version": "0.1.11",
+  "description": "Independent native ACP provider with structured history, compaction, session trees and MCP tool execution.",
+  "requires": { "pi": ">=1.5.2" },
+  "probe": { "commands": ["agy-acp"] },
+  "source": { "repo": "E:/pi-stack", "path": "plugins/antigravity-acp" }
+}

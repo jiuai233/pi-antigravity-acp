@@ -1,0 +1,36 @@
+{
+  "path": "C:\\Users\\67570\\AppData\\Local\\agy\\bin\\agy.exe",
+  "sha256": "a30f863bc4f2c27f913e212e3eea13ebf57f181a8bfbcd1fada4d00da3e63444",
+  "checks": [
+    {
+      "name": "keepAlivePings",
+      "offset": 52283296,
+      "va": "0x1431dd1a0",
+      "bytes": "b806000000c3"
+    },
+    {
+      "name": "sendPing_wait",
+      "offset": 52288359,
+      "va": "0x1431de567",
+      "bytes": "74aa"
+    },
+    {
+      "name": "ping_cache_guard",
+      "offset": 52287395,
+      "va": "0x1431de1a3",
+      "bytes": "0f86c1000000"
+    },
+    {
+      "name": "ping_error_guard",
+      "offset": 52287350,
+      "va": "0x1431de176",
+      "bytes": "0f852a010000"
+    },
+    {
+      "name": "ping_interval",
+      "offset": 52285908,
+      "va": "0x1431ddbd4",
+      "bytes": "000c41dd3e000000"
+    }
+  ]
+}

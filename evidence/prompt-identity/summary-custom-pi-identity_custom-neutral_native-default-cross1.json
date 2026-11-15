@@ -1,0 +1,75 @@
+[
+  {
+    "id": "custom-pi-identity-cross1",
+    "sessionId": "4144020d-2422-46f0-ab20-1d6b5d9bb74d",
+    "text": "\n⚠ API error (attempt 1): RESOURCE_EXHAUSTED (code 429): Resource has been exhausted (e.g. check quota).\n",
+    "response": {
+      "stopReason": "cancelled"
+    },
+    "elapsedMs": 410,
+    "firstTextMs": 397,
+    "agentBytes": 309,
+    "permissions": 0,
+    "updateTypes": [
+      "config_option_update",
+      "available_commands_update",
+      "usage_update",
+      "user_message_chunk",
+      "agent_message_chunk"
+    ]
+  },
+  {
+    "id": "custom-neutral-cross1",
+    "sessionId": "57f5ae2a-b420-48b2-98a4-b18d323353b0",
+    "text": "OK",
+    "response": {
+      "stopReason": "end_turn",
+      "usage": {
+        "inputTokens": 615,
+        "outputTokens": 37,
+        "cachedReadTokens": 0,
+        "cachedWriteTokens": 0,
+        "thoughtTokens": 32,
+        "totalTokens": 652
+      }
+    },
+    "elapsedMs": 1368,
+    "firstTextMs": 1274,
+    "agentBytes": 267,
+    "permissions": 0,
+    "updateTypes": [
+      "config_option_update",
+      "available_commands_update",
+      "usage_update",
+      "user_message_chunk",
+      "agent_message_chunk"
+    ]
+  },
+  {
+    "id": "native-default-cross1",
+    "sessionId": "df4d8a38-effd-4e43-8ecc-d1c0e1386279",
+    "text": "OK",
+    "response": {
+      "stopReason": "end_turn",
+      "usage": {
+        "inputTokens": 4732,
+        "outputTokens": 37,
+        "cachedReadTokens": 0,
+        "cachedWriteTokens": 0,
+        "thoughtTokens": 32,
+        "totalTokens": 4769
+      }
+    },
+    "elapsedMs": 2225,
+    "firstTextMs": 2146,
+    "permissions": 0,
+    "updateTypes": [
+      "config_option_update",
+      "available_commands_update",
+      "usage_update",
+      "user_message_chunk",
+      "session_info_update",
+      "agent_message_chunk"
+    ]
+  }
+]

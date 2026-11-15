@@ -1,0 +1,28 @@
+{
+  "id": "patch.antigravity-context-window",
+  "kind": "patch",
+  "version": "1.0.9",
+  "description": "Wire AGY Windows 1.5.9 Store.ContextWindow to the saved ContextWindowChoice getter",
+  "after": [],
+  "targets": [
+    {
+      "kind": "native-executable",
+      "package": "agy",
+      "path": "<TARGET_EXECUTABLE>",
+      "version": "1.5.9",
+      "files": {
+        "agy.exe": {
+          "base": "8803c289cac04d6e53f2211592d9981c2d5760bc0d9b4a7f222ef6ecc7abb38a",
+          "result": "d3ae0688a27a7a2ec7e6cc4ecac0f084025a9284b08c5ecfd3171eabe68e9195"
+        }
+      },
+      "byte_replacements": [
+        {
+          "offset": 58511136,
+          "before": "4c8d642480",
+          "after": "e9bbffffff"
+        }
+      ]
+    }
+  ]
+}

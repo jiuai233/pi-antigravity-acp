@@ -1,0 +1,84 @@
+{
+  "scope": "AGY CLI 1.5.9; installed Pi host 1.5.2; read-only investigation without AGY model requests",
+  "binary": {
+    "path": "<AGY_BINARY>",
+    "sha256": "d3ae0688a27a7a2ec7e6cc4ecac0f084025a9284b08c5ecfd3171eabe68e9195",
+    "genaiRetryDelayCutoffSeconds": 30,
+    "oneharnessFallbackBackoffMultiplier": 2
+  },
+  "official": {
+    "url": "https://raw.githubusercontent.com/google-antigravity/antigravity-cli/1.5.9/CHANGELOG.md",
+    "passages": [
+      {
+        "version": "## 1.5.9",
+        "line": 16,
+        "text": "- Fixed several `agy acp` issues: a session no longer fails with \"Authentication required\" after `agy acp --login` when `settings.json` names an auth method that has no credential (such as `gemini-api-key` without `GEMINI_API_KEY`), because the CLI now falls back to your saved login; prompts no longer fail when the ACP client passes an MCP server whose name contains spaces or other special characters; a failed turn now reports its specific error, such as a model or quota error, instead of \"Agent execution terminated due to error.\"; and the diffs sent for completed edits no longer carry an extra trailing newline in `oldText` and `newText`."
+      },
+      {
+        "version": "## 1.5.8",
+        "line": 44,
+        "text": "- Fixed agent turns failing when a network connection silently went stale or the network dropped a shared HTTP/2 connection, for example with `http2: client connection force closed via ClientConn.Close` or after a socket write error; model requests now retry on a fresh connection and, if retries run out, show the CLI's network error message. Slow model responses also no longer time out after 60 seconds when an organization's admin settings configure a proxy or custom CA certificate."
+      },
+      {
+        "version": "## 1.5.0",
+        "line": 190,
+        "text": "- Fixed certain models failing a turn on rate-limit (`429`) and server (`5xx`) errors instead of retrying them, now honoring the server's `Retry-After` header, and fixed plugin auto-upgrades of a plugin installed under a different folder name, such as after a rename, writing to a new folder and retrying on every startup instead of updating the existing folder in place."
+      },
+      {
+        "version": "## 1.4.6",
+        "line": 270,
+        "text": "- Improved the in-progress status line to show what the agent is waiting on, such as initializing MCP servers or retrying an unavailable model (for example `Model unavailable (attempt 2/10), retrying in 12s` with a live countdown), instead of a generic working label."
+      },
+      {
+        "version": "## 1.3.4",
+        "line": 394,
+        "text": "- Fixed long stalls when model requests fail repeatedly: the agent now waits at most 30 seconds between automatic retries instead of up to 4 minutes."
+      },
+      {
+        "version": "## 1.2.15",
+        "line": 495,
+        "text": "- Fixed requests made after your plan quota is used up and your AI credits balance cannot cover them: instead of retrying on `Working...` for about two and a half minutes and then showing the generic \"Agent execution terminated due to error.\", the CLI now immediately says \"Your AI credits balance is too low to continue.\""
+      },
+      {
+        "version": "## 1.2.13",
+        "line": 518,
+        "text": "- Improved rate-limit handling when the model API returns a retry delay: the CLI now waits the delay the server asks for instead of a fixed 5 seconds, and stops right away instead of retrying when the delay is longer than 30 seconds or the quota is a daily or billing cap"
+      },
+      {
+        "version": "## 1.1.11",
+        "line": 956,
+        "text": "- Improved model retries by honoring the server-supplied retry delay instead of the client's own backoff, so a retry after a rate limit or an overload waits exactly as long as the server asks."
+      }
+    ]
+  },
+  "offlineClassifierProbe": {
+    "input": {
+      "role": "assistant",
+      "api": "antigravity-acp",
+      "provider": "antigravity-acp",
+      "stopReason": "error",
+      "errorMessage": "UNAVAILABLE (code 503)",
+      "diagnostics": [
+        {
+          "type": "provider_retry_policy_finished",
+          "timestamp": 0
+        }
+      ]
+    },
+    "isRetryableAssistantError": true,
+    "withApiOpenaiCodexResponses": false
+  },
+  "rawEvidence": [
+    "utils.classifyGenAIAPIError.asm",
+    "utils.isHardQuotaExhaustedMessage.asm",
+    "utils.ModelAPIBackoff.asm",
+    "integration.retryConfigFromCortex.asm",
+    "timeutil.backoff.asm"
+  ],
+  "conclusions": [
+    "AGY native retries are already active within one ACP prompt; no plugin replay engine is required.",
+    "Installed Pi recognizes provider_retry_policy_finished only for openai-codex-responses; the same marker does not currently stop AGY ACP outer retries.",
+    "Native maximum tries are configuration-dependent; an archived attempt 1..5 trace does not prove a fixed five-attempt policy.",
+    "No source code or retry configuration was changed."
+  ]
+}

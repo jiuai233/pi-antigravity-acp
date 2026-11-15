@@ -1,0 +1,25 @@
+{
+  "verifiedAt": "2026-11-14T16:22:05.179Z",
+  "agyVersion": "1.5.9",
+  "toolCount": 73,
+  "oldAgentBytes": 111615,
+  "newAgentBytes": 105537,
+  "compiledSectionTitles": [
+    "System Prompt",
+    "行为准则",
+    "本机环境",
+    "AGENTS.md"
+  ],
+  "compiledPromptBytes": 105369,
+  "compiledAgentName": "acp-agent",
+  "startsWithIdentity": true,
+  "hasGuidelines": false,
+  "hasRunningInsidePi": false,
+  "hasDuplicateToolsBlock": false,
+  "hasPiDocsBlock": false,
+  "hasPiEnvRule": false,
+  "hasAcpToolBridge": true,
+  "hasAcpActiveTools": true,
+  "hasFullCodemodeContract": true,
+  "schemaFilesWritten": 73
+}

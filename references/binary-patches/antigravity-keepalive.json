@@ -1,0 +1,30 @@
+{
+  "id": "patch.antigravity-keepalive",
+  "kind": "patch",
+  "version": "1.0.1",
+  "description": "Enable AGY Windows 1.5.7 native CCPA 270s prompt-cache keepalive pings (max 6 pings)",
+  "after": [
+    "patch.antigravity-context-window"
+  ],
+  "targets": [
+    {
+      "kind": "native-executable",
+      "package": "agy",
+      "path": "<TARGET_EXECUTABLE>",
+      "version": "1.5.7",
+      "files": {
+        "agy.exe": {
+          "base": "bdc6016adfbc788e9ad4a75dc51b10c966615ba16c5326d0f0db2af7e6432648",
+          "result": "a30f863bc4f2c27f913e212e3eea13ebf57f181a8bfbcd1fada4d00da3e63444"
+        }
+      },
+      "byte_replacements": [
+        {
+          "offset": 52283296,
+          "before": "493b66107660",
+          "after": "b806000000c3"
+        }
+      ]
+    }
+  ]
+}

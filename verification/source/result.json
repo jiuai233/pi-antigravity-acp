@@ -1,0 +1,42 @@
+{
+  "plugin": "0.1.11",
+  "source_commit": "9f371e7b",
+  "host": "Pi 1.5.2",
+  "offline_test_result": {
+    "pass": 156,
+    "fail": 0,
+    "skipped": 0
+  },
+  "typecheck_exit": 0,
+  "modified_host_files": false,
+  "modified_user_retry_settings": false,
+  "host_and_settings_checks": {
+    "C:\\Users\\67570\\.pi-stack\\current\\app.piweb\\web\\node_modules\\@earendil-works\\pi-ai\\dist\\utils\\retry.js": {
+      "before": "29a3cff44cb4d9717d5fa7efe6d2261abaa98799e50ea792e27b03b16f278ce7",
+      "after": "29a3cff44cb4d9717d5fa7efe6d2261abaa98799e50ea792e27b03b16f278ce7"
+    },
+    "C:\\Users\\67570\\.pi-stack\\current\\app.piweb\\web\\node_modules\\@earendil-works\\pi-coding-agent\\dist\\core\\agent-session.js": {
+      "before": "03f675f4e34babb7f616d3fd6339b393ae5a0e7a8e2abd992af0f6d1e9d6b0be",
+      "after": "03f675f4e34babb7f616d3fd6339b393ae5a0e7a8e2abd992af0f6d1e9d6b0be"
+    },
+    "C:\\Users\\67570\\.pi-stack\\current\\app.piweb\\web\\node_modules\\@earendil-works\\pi-coding-agent\\dist\\core\\settings-manager.js": {
+      "before": "66edb495ff9767e7f2ce0d2f4e2d102532e4b396ad7bc7c3c648c7c12c0fe71d",
+      "after": "66edb495ff9767e7f2ce0d2f4e2d102532e4b396ad7bc7c3c648c7c12c0fe71d"
+    },
+    "C:/Users/67570/.pi/agent/settings.json": {
+      "before": "99936e61296c184a372b52e0f356d16cef71a827b9dcf1659b7932a6bf192899",
+      "after": "99936e61296c184a372b52e0f356d16cef71a827b9dcf1659b7932a6bf192899"
+    }
+  },
+  "scope": "Real SDK, unchanged public recovery components, real ACP runtime unit tests and synthetic provider/ACP responses; no AGY executable/model request; no production activation",
+  "cases": [
+    "native 400/403/daily429/503 stop with error and original details",
+    "transport and other provider retain two configured retries",
+    "successful tool once before terminal failure; explicit next user turn works",
+    "context overflow original classification retained",
+    "abort remains aborted",
+    "summary retry consumer does not repeat native terminal request",
+    "old or healed native errors do not poison successful prompt",
+    "failed native cursor not accepted; checkpoints continue"
+  ]
+}

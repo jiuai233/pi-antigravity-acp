@@ -1,8 +1,4 @@
 node_modules/
 .DS_Store
+*.log
 *.tsbuildinfo
-*.tgz
-.agent-data/
-.env
-.env.*
-__pycache__/

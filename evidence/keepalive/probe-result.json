@@ -1,0 +1,19 @@
+{
+  "finishedAt": "2026-11-13T03:09:36.450Z",
+  "error": null,
+  "nativeUpdates": [],
+  "productionSourceUnchanged": true,
+  "productionMonitorConfigUnchanged": true,
+  "WARM2_trajectory": {
+    "generationCount": 2,
+    "stepCount": 4
+  },
+  "beforePost": {
+    "generationCount": 2,
+    "stepCount": 4
+  },
+  "afterPost": {
+    "generationCount": 3,
+    "stepCount": 6
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "source": "Redacted native 400 error shape; no account, conversation or request identifiers.",
+  "type": "CORTEX_STEP_TYPE_ERROR_MESSAGE",
+  "status": "CORTEX_STEP_STATUS_DONE",
+  "errorMessage": {
+    "error": {
+      "userErrorMessage": "Agent execution terminated due to error.",
+      "shortError": "INVALID_ARGUMENT (code 400): Request contains an invalid argument.",
+      "errorCode": 400,
+      "details": "{\n  \"error\": {\n    \"code\": 400,\n    \"message\": \"Request contains an invalid argument.\",\n    \"status\": \"INVALID_ARGUMENT\"\n  }\n}\n"
+    },
+    "shouldShowUser": true
+  }
+}

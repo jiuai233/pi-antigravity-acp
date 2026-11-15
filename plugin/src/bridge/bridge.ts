@@ -1,0 +1,594 @@
+/**
+ * AgyPiBridge — loopback MCP server (streamable HTTP) exposing active pi
+ * tools to agy under CLI-safe names, plus the pending-call store that correlates
+ * agy's MCP calls with pi tool executions.
+ *
+ * Call flow (mirrors the replay flow, but executing):
+ *   1. agy calls a published alias → our HTTP handler maps it to the Pi tool and
+ *      notifies the runtime (`onCall`), which pushes a synthetic
+ *      `bridge_call` activity into the live AgyTurnController;
+ *   2. the provider ends the pi turn with stopReason "toolUse" for the REAL
+ *      pi tool (native cards, hooks, permissions, abort);
+ *   3. pi executes the tool; the toolResult lands in context;
+ *   4. the next streamAntigravity request re-attaches to the running agy
+ *      turn, matches the toolResult by toolCallId, resolves the HTTP
+ *      response, and agy continues in the same conversation.
+ *
+ * The handler never resolves directly from the HTTP side: it blocks until
+ * the provider hands back the executed result, or the owning prompt is cancelled/stopped.
+ */
+
+import { randomUUID } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
+import { acpContent, visibleContent } from "../content.ts";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { bridgeToolName, bridgeToolNames } from "./names.ts";
+// Frozen from AGY bridge 1.2.15; provenance is in frozen-sources.json.
+import { fitBridgeToolOutput, MAX_BRIDGE_OUTPUT_BYTES } from "./output.ts";
+
+const WRAPPER_TOOL_NAME = "antigravity";
+
+export const BRIDGE_SERVER_NAME = "acp-tools";
+export const BRIDGE_TOOL_PREFIX = "pi__";
+/** Budget reserved per MCP image block for agy's `[Resource offloaded to ...]` line. */
+const RESERVED_MEDIA_LINE_BYTES = 256;
+
+export interface BridgeToolDef {
+  /** Real pi tool name (without the `pi__` prefix). */
+  name: string;
+  description: string;
+  /** JSON schema (typebox) for the tool parameters. */
+  parameters: unknown;
+}
+
+/** Shape of Pi's active tool registry used to publish the live catalog. */
+export interface PiToolInfo {
+  name: string;
+  description?: string;
+  parameters?: unknown;
+}
+
+/** Publish every currently active Pi tool except this extension's own wrapper. */
+export function selectBridgedTools(
+  tools: PiToolInfo[],
+  activeNames: readonly string[],
+): BridgeToolDef[] {
+  const active = new Set(activeNames);
+  const bridged: BridgeToolDef[] = [];
+  for (const tool of tools) {
+    if (!active.has(tool.name)) continue;
+    if (tool.name === WRAPPER_TOOL_NAME) continue; // prevent recursive Antigravity calls
+    bridged.push({
+      name: tool.name,
+      description: tool.description ?? "",
+      parameters: tool.parameters,
+    });
+  }
+  return bridged;
+}
+
+export type BridgeContent =
+  | { type: "text"; text: string }
+  | { type: "image"; data: string; mimeType: string };
+
+export interface BridgeCallResult {
+  content: string | BridgeContent[];
+  isError: boolean;
+}
+
+export interface BridgeCall {
+  id: string;
+  tool: string;
+  args: Record<string, unknown>;
+}
+
+type PendingCall = BridgeCall & {
+  resolve: (result: BridgeCallResult) => void;
+};
+
+/** A dynamically-refreshed virtual tool (one per bridged pi skill). */
+interface DynamicTool {
+  description: string;
+  parameters: unknown;
+  handler: (args: Record<string, unknown>) => Promise<BridgeCallResult>;
+}
+
+interface JsonRpcRequest {
+  id?: number | string | null;
+  method?: string;
+  params?: {
+    protocolVersion?: string;
+    name?: string;
+    arguments?: Record<string, unknown>;
+  };
+}
+
+export function canonicalValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalValue);
+  if (typeof value !== "object" || value === null) return value;
+  const object = value as Record<string, unknown>;
+  return Object.fromEntries(
+    Object.keys(object)
+      .sort()
+      .map((key) => [key, canonicalValue(object[key])]),
+  );
+}
+
+export function canonicalJson(value: unknown): string {
+  return JSON.stringify(canonicalValue(value));
+}
+
+/** Stable object/member order; JSON arrays keep their semantic/presentation order. */
+export function canonicalToolDefinitions<T extends PiToolInfo>(tools: readonly T[]): T[] {
+  return tools.map((tool) => ({ ...tool, parameters: canonicalValue(tool.parameters) }))
+    .sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
+}
+
+export class AgyPiBridge {
+  #tools: BridgeToolDef[] = [];
+  #server: Server | undefined;
+  #port = 0;
+  #seq = 0;
+  #callNamespace = randomUUID();
+  #pending = new Map<string, PendingCall>();
+  /** Shared secret agy must send on every request; unset = no auth (tests). */
+  #token: string | undefined;
+  /** Per-session server name so concurrent pi sessions cannot hijack each other's registration. */
+  #serverName: string;
+  get serverName(): string { return this.#serverName; }
+  /**
+   * Prefix applied before CLI-safe aliasing. Legacy callers use `pi__`;
+   * native sessions use an empty prefix with a private per-instance server.
+   * Routing always uses the published alias table, not prefix stripping.
+   */
+  #toolPrefix = BRIDGE_TOOL_PREFIX;
+  /** Callback that routes a call into the live agy turn controller. Returns false when no turn is active. */
+  #onCall: ((call: BridgeCall) => boolean) | undefined;
+  #onSettled: ((id: string) => void) | undefined;
+  /** Source of the current active-tool snapshot, invoked once per provider request. */
+  #toolSource: (() => BridgeToolDef[]) | undefined;
+  /** Replaced wholesale on every skills refresh (activate_skill, or empty). */
+  #dynamic = new Map<string, DynamicTool>();
+  #catalogRevision = 0;
+  #nameToPi = new Map<string, string>();
+  #catalog: Array<{ name: string; description: string; inputSchema: unknown }> = [];
+  #readable = true;
+  #archiveDirectory: string | undefined;
+
+  readonly #createServer: typeof createServer;
+
+  constructor(
+    serverName: string = BRIDGE_SERVER_NAME,
+    serverFactory: typeof createServer = createServer,
+  ) {
+    this.#serverName = serverName;
+    this.#createServer = serverFactory;
+  }
+
+  getPendingCall(callId: string): BridgeCall | undefined {
+    const pending = this.#pending.get(callId);
+    return pending && { id: pending.id, tool: pending.tool, args: pending.args };
+  }
+
+  /** Change the logical identity only while no transport or pending call exists. */
+  setServerName(serverName: string): void {
+    if (this.#server || this.#pending.size) throw new Error("Cannot rebind a running Pi bridge.");
+    this.#serverName = serverName;
+    this.#updateCatalogRevision();
+  }
+
+  /** Require `token` in the x-pi-bridge-token header on every request. */
+  requireToken(token: string): void {
+    this.#token = token;
+  }
+
+  /** Set the per-session tool-name prefix (e.g. `pi__p1234__`). */
+  setToolPrefix(prefix: string): void {
+    this.#toolPrefix = prefix;
+    this.#updateCatalogRevision();
+  }
+
+  setOnCall(onCall: (call: BridgeCall) => boolean): void {
+    this.#onCall = onCall;
+  }
+
+  setOnSettled(onSettled: (id: string) => void): void {
+    this.#onSettled = onSettled;
+  }
+
+  setToolSource(toolSource: () => BridgeToolDef[]): void {
+    this.#toolSource = toolSource;
+  }
+
+  /** Whether native `read_file` is available to read archived full outputs. */
+  setReadable(readable: boolean): void {
+    this.#readable = readable;
+  }
+
+  /** Override the archive root directory (used by isolated tests). */
+  setArchiveDirectory(directory: string | undefined): void {
+    this.#archiveDirectory = directory;
+  }
+
+  /** Refresh the exposed-tool snapshot and report whether canonical content changed. */
+  refreshTools(): boolean {
+    this.#tools = this.#toolSource?.() ?? [];
+    return this.#updateCatalogRevision();
+  }
+
+  get catalogRevision(): number {
+    return this.#catalogRevision;
+  }
+
+  /** AGY's ACP name for a tool published by this bridge, not a native execution grant. */
+  ownsNativeTool(name: unknown): boolean {
+    return this.#catalog.some(tool => name === `mcp_${this.serverName}_${tool.name}`);
+  }
+
+  /** Published local MCP tool alias on this bridge (used by native `call_mcp_tool`). */
+  ownsToolAlias(name: unknown): boolean {
+    return this.#catalog.some(tool => name === tool.name);
+  }
+
+  /**
+   * Replace the dynamic tool set (used for `pi__activate_skill`, handled
+   * in-process without a pi toolUse round-trip). The whole set is swapped
+   * so a missing catalog disappears from tools/list on the next refresh.
+   */
+  setDynamicTools(
+    tools: Array<{
+      name: string;
+      description: string;
+      parameters: unknown;
+      handler: (args: Record<string, unknown>) => Promise<BridgeCallResult>;
+    }>,
+  ): void {
+    this.#dynamic = new Map(tools.map((tool) => [tool.name, { ...tool }]));
+    this.#updateCatalogRevision();
+  }
+
+  #updateCatalogRevision(): boolean {
+    const names = bridgeToolNames(this.serverName,
+      [...this.#tools.map((tool) => tool.name), ...this.#dynamic.keys()], this.#toolPrefix);
+    const catalog = [
+      ...this.#tools
+        .filter((tool) => !this.#dynamic.has(tool.name))
+        .map((tool) => ({
+          name: bridgeToolName(this.serverName, tool.name, this.#toolPrefix),
+          description:
+            tool.description || `Tool "${tool.name}" bridged via ${this.serverName}.`,
+          inputSchema: canonicalValue(tool.parameters),
+        })),
+      ...[...this.#dynamic].map(([name, definition]) => ({
+        name: bridgeToolName(this.serverName, name, this.#toolPrefix),
+        description: definition.description,
+        inputSchema: canonicalValue(definition.parameters),
+      })),
+    ].sort((a, b) => a.name.localeCompare(b.name));
+    this.#nameToPi = names;
+    if (isDeepStrictEqual(catalog, this.#catalog)) return false;
+    this.#catalog = catalog;
+    this.#catalogRevision += 1;
+    return true;
+  }
+
+  get url(): string | undefined {
+    return this.#server ? `http://127.0.0.1:${this.#port}/mcp` : undefined;
+  }
+
+  get running(): boolean {
+    return this.#server !== undefined;
+  }
+
+  get pendingCount(): number {
+    return this.#pending.size;
+  }
+
+  start(): Promise<void> {
+    if (this.#server) return Promise.resolve();
+    const server = this.#createServer((req, res) => this.#handleHttp(req, res));
+    this.#server = server;
+    return new Promise((resolve, reject) => {
+      const onError = (error: Error) => {
+        // A failed listen must not leave the bridge marked as running.
+        this.#server = undefined;
+        reject(error);
+      };
+      server.once("error", onError);
+      server.listen(0, "127.0.0.1", () => {
+        server.off("error", onError);
+        const addr = server.address();
+        if (addr && typeof addr === "object") this.#port = addr.port;
+        resolve();
+      });
+    });
+  }
+
+  /** Fail all pending calls and stop listening. */
+  close(): Promise<void> {
+    const server = this.#server;
+    if (!server) return Promise.resolve();
+    this.#server = undefined;
+    this.#port = 0;
+    this.cancelPending("antigravity: pi session shut down while the tool call was pending.");
+    return new Promise((resolve) => {
+      server.close(() => resolve());
+    });
+  }
+
+  /** Settle pending calls without closing the workspace bridge. */
+  cancelPending(content: string): void {
+    for (const id of this.#pending.keys()) {
+      this.resolveCall(id, { content, isError: true });
+    }
+  }
+
+  /** True when the provider is still waiting for pi to execute this call. */
+  isAwaiting(callId: string): boolean {
+    return this.#pending.has(callId);
+  }
+
+  /** Hand the executed pi tool result back to the waiting agy MCP call. */
+  resolveCall(callId: string, result: BridgeCallResult): boolean {
+    const pending = this.#pending.get(callId);
+    if (!pending) return false;
+    this.#pending.delete(callId);
+    this.#onSettled?.(callId);
+    pending.resolve(result);
+    return true;
+  }
+
+  // --- HTTP / JSON-RPC -----------------------------------------------------
+
+  #handleHttp(req: IncomingMessage, res: ServerResponse): void {
+    if (this.#token !== undefined && req.headers["x-pi-bridge-token"] !== this.#token) {
+      res.writeHead(403, { "content-type": "application/json" });
+      res.end(JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Forbidden" } }));
+      return;
+    }
+    if (req.method !== "POST") {
+      res.writeHead(405, { "content-type": "application/json" });
+      res.end(
+        JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "GET not supported" } }),
+      );
+      return;
+    }
+    const chunks: Buffer[] = [];
+    req.on("data", (chunk: Buffer) => chunks.push(chunk));
+    req.on("end", () => {
+      let rpc: JsonRpcRequest;
+      try {
+        rpc = JSON.parse(Buffer.concat(chunks).toString("utf-8")) as JsonRpcRequest;
+      } catch {
+        res.writeHead(400, { "content-type": "application/json" });
+        res.end(
+          JSON.stringify({ jsonrpc: "2.0", error: { code: -32700, message: "Parse error" } }),
+        );
+        return;
+      }
+      if (rpc.method === "tools/call") {
+        // AGY's HTTP client has a 60s response-header deadline. Acknowledge
+        // transport now, but do not send a JSON-RPC result before Pi returns it.
+        res.writeHead(200, { "content-type": "application/json", "mcp-session-id": SESSION_ID });
+        res.flushHeaders();
+      }
+      void this.#handleRpc(rpc).then(
+        (response) => {
+          if (!response) {
+            // Notification: no body per the streamable HTTP spec.
+            res.writeHead(202);
+            res.end();
+            return;
+          }
+          if (!res.headersSent) res.writeHead(200, {
+            "content-type": "application/json",
+            "mcp-session-id": SESSION_ID,
+          });
+          res.end(JSON.stringify(response));
+        },
+        () => {
+          if (!res.headersSent) res.writeHead(500, { "content-type": "application/json" });
+          res.end(
+            JSON.stringify({ jsonrpc: "2.0", error: { code: -32603, message: "Internal error" } }),
+          );
+        },
+      );
+    });
+  }
+
+  async #handleRpc(rpc: JsonRpcRequest): Promise<Record<string, unknown> | undefined> {
+    const base = { jsonrpc: "2.0", id: rpc.id ?? null };
+    switch (rpc.method) {
+      case "initialize": {
+        return {
+          ...base,
+          result: {
+            protocolVersion: rpc.params?.protocolVersion ?? "2024-11-05",
+            capabilities: { tools: {} },
+            serverInfo: { name: BRIDGE_SERVER_NAME, version: "1.0.0" },
+          },
+        };
+      }
+      case "notifications/initialized":
+      case "notifications/cancelled":
+        return undefined; // notification — 202, no body
+      case "tools/list": {
+        return {
+          ...base,
+          result: {
+            tools: this.#catalog,
+          },
+        };
+      }
+      case "tools/call": {
+        const name = rpc.params?.name ?? "";
+        const args = rpc.params?.arguments ?? {};
+        const result = await this.#routeCall(name, args);
+        return {
+          ...base,
+          result: {
+            content: this.#formatToolCallContent(result.content),
+            isError: result.isError,
+          },
+        };
+      }
+      default:
+        return {
+          ...base,
+          error: { code: -32601, message: `Method not found: ${rpc.method}` },
+        };
+    }
+  }
+
+  #formatToolCallContent(content: string | BridgeContent[]): BridgeContent[] {
+    if (typeof content === "string") {
+      return [
+        {
+          type: "text",
+          text: fitBridgeToolOutput(content, {
+            readable: this.#readable,
+            directory: this.#archiveDirectory,
+          }),
+        },
+      ];
+    }
+    const textParts = content.filter(
+      (part): part is Extract<BridgeContent, { type: "text" }> => part.type === "text",
+    );
+    const imageParts = content.filter(
+      (part): part is Extract<BridgeContent, { type: "image" }> => part.type === "image",
+    );
+    const maxBytes = Math.max(
+      1_024,
+      MAX_BRIDGE_OUTPUT_BYTES - imageParts.length * RESERVED_MEDIA_LINE_BYTES,
+    );
+    const joinedText = textParts.map((part) => part.text).join("\n");
+    if (Buffer.byteLength(joinedText, "utf8") <= maxBytes) {
+      return content;
+    }
+    if (textParts.length > 1 && textParts[0].text.startsWith("[New message from the user,")) {
+      const avail = maxBytes - 1;
+      const half = Math.floor(avail / 2);
+      const steerRaw = textParts[0].text;
+      const steerBytes = Buffer.byteLength(steerRaw, "utf8");
+      const toolText = textParts.slice(1).map((part) => part.text).join("\n");
+      const toolBytes = Buffer.byteLength(toolText, "utf8");
+      let fittedSteerText = steerRaw;
+      let fittedToolText = toolText;
+      if (toolBytes <= half) {
+        fittedSteerText = fitBridgeToolOutput(steerRaw, {
+          readable: this.#readable,
+          directory: this.#archiveDirectory,
+          maxBytes: avail - toolBytes,
+        });
+      } else if (steerBytes <= half) {
+        fittedToolText = fitBridgeToolOutput(toolText, {
+          readable: this.#readable,
+          directory: this.#archiveDirectory,
+          maxBytes: avail - steerBytes,
+        });
+      } else {
+        fittedSteerText = fitBridgeToolOutput(steerRaw, {
+          readable: this.#readable,
+          directory: this.#archiveDirectory,
+          maxBytes: half,
+        });
+        fittedToolText = fitBridgeToolOutput(toolText, {
+          readable: this.#readable,
+          directory: this.#archiveDirectory,
+          maxBytes: avail - Buffer.byteLength(fittedSteerText, "utf8"),
+        });
+      }
+      return [{ type: "text", text: fittedSteerText }, { type: "text", text: fittedToolText }, ...imageParts];
+    }
+    return [
+      {
+        type: "text",
+        text: fitBridgeToolOutput(joinedText, {
+          readable: this.#readable,
+          directory: this.#archiveDirectory,
+          maxBytes,
+        }),
+      },
+      ...imageParts,
+    ];
+  }
+
+  /**
+   * Resolve one published MCP alias into the live agy turn and wait for pi
+   * to execute it. Unknown tools return isError; valid calls wait for the real
+   * Pi result or explicit cancellation of the owning prompt.
+   */
+  async #routeCall(mcpName: string, args: Record<string, unknown>): Promise<BridgeCallResult> {
+    const tool = this.#nameToPi.get(mcpName);
+    if (tool === undefined) {
+      return { content: `antigravity: unknown or inactive bridge tool "${mcpName}".`, isError: true };
+    }
+    const dynamic = this.#dynamic.get(tool);
+    if (dynamic) return dynamic.handler(args);
+    if (this.#tools.some((def) => def.name === tool)) {
+      return this.#routeToPiTool(tool, args);
+    }
+    return { content: `antigravity: tool "${tool}" is not currently active in pi.`, isError: true };
+  }
+
+  async #routeToPiTool(tool: string, args: Record<string, unknown>): Promise<BridgeCallResult> {
+    const id = `pi-acp-${this.#callNamespace}-${++this.#seq}`;
+    return new Promise<BridgeCallResult>((resolve) => {
+      // Register before notifying the owner: an immediate real result must not race
+      // the pending entry. An absent writer never unlocks AGY inference.
+      this.#pending.set(id, { id, tool, args, resolve });
+      this.#onCall?.({ id, tool, args });
+    });
+  }
+}
+
+const SESSION_ID = randomUUID();
+
+/** Extract bridge-awaiting tool results from a pi context and resolve them. */
+export interface BridgeSteerNotice {
+  /** Text placed before the newest resolved result so agy reads it first. */
+  readonly text: string;
+  /** Called once, after a result carrying the notice was handed to agy. */
+  readonly delivered: () => void;
+}
+
+export function resolveBridgeResultsFromContext(
+  bridge: AgyPiBridge,
+  messages: readonly unknown[],
+  steer?: BridgeSteerNotice,
+): number {
+  let resolved = 0;
+  let notice = steer;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i] as {
+      role?: string;
+      toolCallId?: string;
+      toolName?: string;
+      isError?: boolean;
+      content?: Array<{ type?: string; text?: string; data?: string; mimeType?: string }>;
+    };
+    if (message?.role !== "toolResult" || !message.toolCallId) continue;
+    const pending = bridge.getPendingCall(message.toolCallId);
+    if (!pending) continue;
+    if (message.toolName !== pending.tool) throw new Error(`Pi tool result name does not match ${message.toolCallId}.`);
+    const proposed = messages.flatMap((candidate: any) => candidate?.role === "assistant" ? candidate.content ?? [] : [])
+      .find((part: any) => part.type === "toolCall" && part.id === message.toolCallId) as
+      { name?: string; arguments?: unknown } | undefined;
+    if (!proposed || proposed.name !== pending.tool || canonicalJson(proposed.arguments) !== canonicalJson(pending.args)) {
+      throw new Error(`Pi tool call identity/arguments do not match ${message.toolCallId}.`);
+    }
+    const content: BridgeContent[] = [];
+    for (const part of acpContent(message.content ?? [])) {
+      if (part.type === "text" || part.type === "image") content.push(part);
+      else content.push({ type: "text", text: visibleContent(part) });
+    }
+    if (notice) content.unshift({ type: "text", text: notice.text });
+    if (bridge.resolveCall(message.toolCallId, { content, isError: message.isError === true })) {
+      resolved += 1;
+      notice?.delivered();
+      notice = undefined;
+    }
+  }
+  return resolved;
+}

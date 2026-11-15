@@ -1,0 +1,27 @@
+{
+  "name": "@local/pi-antigravity-acp",
+  "version": "0.1.11",
+  "description": "Antigravity native ACP sessions with MCP tool bridging and structured history sync.",
+  "type": "module",
+  "license": "MIT",
+  "files": ["index.ts", "src", "resources", "README.md", "THIRD_PARTY.md", "frozen-sources.json", "unit.json", ".npmrc"],
+  "engines": { "node": ">=24" },
+  "pi": {"extensions": ["./index.ts"]},
+  "dependencies": {
+    "@agentclientprotocol/sdk": "2.6.0",
+    "@bufbuild/protobuf": "2.16.0",
+    "zod": "3.25.76"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-ai": ">=1.5.2",
+    "@earendil-works/pi-coding-agent": ">=1.5.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --test test/*.test.mjs",
+    "typecheck": "tsc --noEmit"
+  }
+}

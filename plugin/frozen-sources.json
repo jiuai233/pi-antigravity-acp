@@ -1,0 +1,30 @@
+[
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\extension\\bridge.ts",
+    "target": "src/bridge/bridge.ts"
+  },
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\native\\native-tool-names.ts",
+    "target": "src/bridge/names.ts"
+  },
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\input\\pi-input.ts",
+    "target": "src/bridge/output.ts",
+    "extracted": "storeArchive, UTF-8 line helpers, fitBridgeToolOutput only"
+  },
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\provider\\models.ts",
+    "target": "src/models.ts",
+    "adaptation": "same model parsing/effort/capability/estimate helpers; remove old fallback list and cache policy"
+  },
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\driver\\network-monitor.ts",
+    "target": "src/network-monitor.ts",
+    "adaptation": "unchanged spawn-only monitor configuration"
+  },
+  {
+    "source": "C:\\Users\\67570\\.pi-stack\\releases\\plugin.antigravity-native\\1.2.15-43e231010b24\\src\\driver\\agy-children.ts",
+    "target": "src/processes.ts",
+    "adaptation": "private ACP process registry namespace"
+  }
+]

@@ -1,0 +1,79 @@
+{
+  "source": "agy 1.5.7 models",
+  "models": [
+    {
+      "id": "gemini-4-carbon",
+      "name": "Gemini 4 Carbon",
+      "supportedEfforts": [
+        "medium",
+        "high",
+        "low"
+      ],
+      "defaultEffort": "medium"
+    },
+    {
+      "id": "gemini-4-argon",
+      "name": "Gemini 4 Argon",
+      "supportedEfforts": [
+        "medium",
+        "high",
+        "low"
+      ],
+      "defaultEffort": "medium"
+    },
+    {
+      "id": "gemini-4-hydrogen",
+      "name": "Gemini 4 Hydrogen",
+      "supportedEfforts": [
+        "high",
+        "xhigh",
+        "medium",
+        "low"
+      ],
+      "defaultEffort": "high"
+    },
+    {
+      "id": "gemini-pro-orchestrator",
+      "name": "Orchestrator",
+      "supportedEfforts": []
+    },
+    {
+      "id": "gemini-3.8-flash",
+      "name": "Gemini 3.8 Flash",
+      "supportedEfforts": [
+        "high",
+        "medium",
+        "low"
+      ],
+      "defaultEffort": "high"
+    },
+    {
+      "id": "claude-opus-5-5",
+      "name": "Claude Opus 5.5",
+      "supportedEfforts": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "defaultEffort": "low"
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "name": "Claude Sonnet 5.5",
+      "supportedEfforts": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "defaultEffort": "low"
+    },
+    {
+      "id": "gpt-oss-120b",
+      "name": "GPT-OSS 120B",
+      "supportedEfforts": [
+        "medium"
+      ],
+      "defaultEffort": "medium"
+    }
+  ]
+}
