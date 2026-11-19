@@ -107,6 +107,10 @@ const ZERO_PRICING: ModelPricing = {
  * than inheriting an unrelated vendor's rate.
  */
 export function pricingForModel(modelId: string, asOf = Date.now()): ModelPricing {
+  if (/^gemini-4-neon$/i.test(modelId)) {
+    // https://aistudio.google.com/docs/pricing#gemini-4-neon
+    return { input: 3, output: 15, cacheRead: 0.15, cacheWrite: 0 };
+  }
   if (/^gemini-4-(?:argon|carbon)$/i.test(modelId)) {
     // Argon and Carbon share the same Standard-tier rates; introductory rates expire after November 30, 2026.
     // https://ai.google.dev/gemini-api/docs/pricing
@@ -142,10 +146,7 @@ export function pricingForModel(modelId: string, asOf = Date.now()): ModelPricin
   return { ...ZERO_PRICING };
 }
 
-/** Match the local AGY `contextWindow: "512K"` preset (decimal tokens).
- * The managed CLI context-window patch makes that setting effective; agy
- * executes the selected model; Pi remains the compaction authority.
- */
+/** Pi scheduling window for Gemini models with the AGY 512K preset. */
 export const AGY_PI_SCHEDULING_CONTEXT_WINDOW = 512_000;
 
 export function toProviderModel(model: AgyModelInfo): ProviderModelConfig {
@@ -179,6 +180,8 @@ export function capabilitiesForModel(modelId: string): ModelCapabilities {
   const input: ModelCapabilities["input"] = ["text", "image"];
   // GPT-OSS keeps a native 98,304-token working budget even with the 512K
   // preset; do not advertise a larger usable window for this disabled model.
-  const contextWindow = /^gpt-oss-120b/i.test(modelId) ? 98_304 : AGY_PI_SCHEDULING_CONTEXT_WINDOW;
+  const contextWindow = /^gpt-oss-120b/i.test(modelId) ? 98_304
+    : /^claude-(?:opus|sonnet)-5-5(?:$|-)/i.test(modelId) ? 840_000
+    : AGY_PI_SCHEDULING_CONTEXT_WINDOW;
   return { input, contextWindow, maxTokens };
 }

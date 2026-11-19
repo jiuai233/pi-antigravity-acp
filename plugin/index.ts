@@ -4,7 +4,7 @@ import type { ExtensionAPI, ExtensionContext, ExtensionUIContext } from "@earend
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { ModelCatalog } from "./src/model-catalog.ts";
 import { toProviderModel } from "./src/models.ts";
-import { isPatchedMacBinary, resolveBinary } from "./src/platform.ts";
+import { resolveBinary } from "./src/platform.ts";
 import { AgyPrefixAudit, PREFIX_AUDIT_ENTRY } from "./src/prefix-audit.ts";
 import { ensureAgyQuotaBridge } from "./src/quota.ts";
 import { AcpRuntime, API, BINDING_ENTRY, type Binding, PROVIDER, RESET_ENTRY } from "./src/runtime.ts";
@@ -13,7 +13,7 @@ import { openAgyUsagePicker } from "./src/usage-ui.ts";
 type StreamOptionsWithIdentity = SimpleStreamOptions & { requestIdentity?: { requestKind?: string } };
 
 export default function antigravityAcpExtension(pi: ExtensionAPI): void {
-  if (process.platform === "darwin" && !process.env.AGY_BINARY && isPatchedMacBinary()) {
+  if (process.platform === "darwin" && !process.env.AGY_BINARY) {
     process.env.AGY_CLI_DISABLE_AUTO_UPDATE ??= "true";
   }
   let context: ExtensionContext | undefined;
