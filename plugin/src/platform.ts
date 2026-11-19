@@ -1,25 +1,10 @@
 import { execFile, execFileSync } from "node:child_process";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
-import os from "node:os";
-import path from "node:path";
+import { readFileSync, realpathSync } from "node:fs";
 import { promisify } from "node:util";
 import { type AgyModelInfo, parseAgyModels } from "./models.ts";
 
-export function resolvePatchedMacBinary(homeDir = os.homedir()): string | undefined {
-  if (process.platform !== "darwin") return undefined;
-  return ["agy-512k", "agy-512k-keepalive"]
-    .map(name => path.join(homeDir, ".gemini", "bin", name))
-    .find(file => existsSync(file));
-}
-
-export function isPatchedMacBinary(homeDir = os.homedir()): boolean {
-  return resolvePatchedMacBinary(homeDir) !== undefined;
-}
-
 export function resolveBinary(override = process.env.AGY_BINARY): string {
   if (override) return realpathSync(override);
-  const patched = resolvePatchedMacBinary();
-  if (patched) return realpathSync(patched);
   const command = process.platform === "win32" ? "where.exe" : "which";
   const found = execFileSync(command, [process.platform === "win32" ? "agy.exe" : "agy"], { encoding: "utf8", windowsHide: true, timeout: 5_000 })
     .split(/\r?\n/).find(line => line.trim());
