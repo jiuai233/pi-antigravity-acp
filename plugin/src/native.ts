@@ -22,10 +22,6 @@ export class NativeControl {
     });
   }
 
-  async quotaSummary(signal?: AbortSignal): Promise<any> {
-    return this.request("RetrieveUserQuotaSummary", {}, signal);
-  }
-
   async fork(conversationId: string, stepIndex?: number): Promise<string> {
     const forked = await this.request("ForkConversation", {
       sourceCascadeId: conversationId, ...(stepIndex === undefined ? {} : { forkAtStepIndex: stepIndex }),

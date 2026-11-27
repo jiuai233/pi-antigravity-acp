@@ -6,9 +6,7 @@ import { ModelCatalog } from "./src/model-catalog.ts";
 import { toProviderModel } from "./src/models.ts";
 import { resolveBinary } from "./src/platform.ts";
 import { AgyPrefixAudit, PREFIX_AUDIT_ENTRY } from "./src/prefix-audit.ts";
-import { ensureAgyQuotaBridge } from "./src/quota.ts";
 import { AcpRuntime, API, BINDING_ENTRY, type Binding, PROVIDER, RESET_ENTRY } from "./src/runtime.ts";
-import { openAgyUsagePicker } from "./src/usage-ui.ts";
 
 type StreamOptionsWithIdentity = SimpleStreamOptions & { requestIdentity?: { requestKind?: string } };
 
@@ -41,11 +39,6 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
   const key = () => context?.sessionManager.getSessionId() ?? "unbound-sdk";
   const stateRoot = () => process.env.AGY_ACP_STATE_DIR ?? path.join(getAgentDir(), "antigravity-acp");
   const catalog = new ModelCatalog(stateRoot());
-  ensureAgyQuotaBridge().configureDefaults({
-    stateRoot,
-    cwd: () => context?.cwd ?? process.cwd(),
-    binary: resolveBinary,
-  });
   const create = (id: string, persist: boolean) => new AcpRuntime({
     cwd: context?.cwd ?? process.cwd(), sessionKey: id,
     stateDirectory: path.join(stateRoot(), encodeURIComponent(id)),
@@ -143,17 +136,6 @@ export default function antigravityAcpExtension(pi: ExtensionAPI): void {
     await Promise.allSettled([...runtimes.values()].map(runtime => runtime.close()));
     runtimes.clear();
     unregisterCleanup?.(); unregisterCleanup = undefined;
-  });
-  pi.registerCommand("agy-usage", {
-    description: "查看 Antigravity 模型额度（5 小时与周额度）",
-    handler: async (args, ctx) => {
-      context = ctx;
-      if (args.trim()) {
-        ctx.ui.notify('agy-usage: 用法 "/agy-usage"。', "error");
-        return;
-      }
-      await openAgyUsagePicker(ctx);
-    },
   });
   const ACP_SUBCOMMANDS = [
     { value: "status", label: "status", description: "查看当前 ACP 会话绑定与上次缓存命中" },
