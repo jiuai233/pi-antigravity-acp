@@ -2,7 +2,7 @@
   "name": "@jiuai233/pi-antigravity-acp",
   "version": "0.1.11",
   "type": "module",
-  "description": "Antigravity native ACP sessions with MCP tool bridging, quota usage panel, and structured history sync.",
+  "description": "Antigravity native ACP sessions with MCP tool bridging and structured history sync.",
   "keywords": [
     "pi",
     "pi-package",

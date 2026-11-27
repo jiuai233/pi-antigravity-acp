@@ -53,10 +53,9 @@ async function fixture(t, provider = 'other') {
     }
   });
   await handlers.get('session_start')({}, ctx);
-  return {ctx, handlers, entries, notifications, statuses, registered, lifecycle,
+  return {ctx, handlers, commands, entries, notifications, statuses, registered, lifecycle,
     command: args => commands.get('agy-acp').handler(args, ctx),
     complete: prefix => commands.get('agy-acp').getArgumentCompletions(prefix),
-    usageCommand: (args = '') => commands.get('agy-usage').handler(args, ctx),
     get calls() { return calls; }, get runtime() { return runtime; }, get catalog() { return catalog; },
     select: async provider => { selected = {provider, id: 'fixture'}; await handlers.get('model_select')({model: selected}, ctx); },
     fail: error => { failure = error; }};
@@ -112,17 +111,15 @@ test('doctor only reports local binary/runtime/catalog facts without starting ge
   assert.ok(result.prefixAudit && typeof result.prefixAudit.summary === 'string' && Array.isArray(result.prefixAudit.details));
 });
 
-test('cache subcommand, status bar, and /agy-usage argument validation behave cleanly', async t => {
+test('cache subcommand and status bar behave cleanly without registering /agy-usage', async t => {
   const f = await fixture(t, PROVIDER);
+  assert.equal(f.commands.has('agy-usage'), false);
   assert.ok(f.statuses.some(s => s.key === 'agy-cache' && /AGY/.test(String(s.text))));
   await f.command('cache');
   assert.match(f.notifications.at(-1).text, /prefix audit: v1/);
   await f.select('other');
   assert.equal(f.statuses.at(-1).key, 'agy-cache');
   assert.equal(f.statuses.at(-1).text, undefined);
-  await f.usageCommand('extra');
-  assert.equal(f.notifications.at(-1).level, 'error');
-  assert.match(f.notifications.at(-1).text, /\/agy-usage/);
 
   const all = f.complete('');
   assert.deepEqual(all.map(item => item.value), ['status', 'cache', 'doctor', 'models', 'reset']);

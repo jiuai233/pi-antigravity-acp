@@ -30,7 +30,6 @@ import {
   readNativeProfile,
   syncNativeToolSchemas,
 } from "./profile.ts";
-import { registerLiveAcpRuntime, touchLiveAcpRuntime, unregisterLiveAcpRuntime } from "./quota.ts";
 import { copyNativeConversation, removeNativeBootstrap } from "./store.ts";
 import { isNativeDoneStep, isNativeErrorStep, nativePromptError } from "./terminal.ts";
 import { emptyUsage, UsageLedger } from "./usage.ts";
@@ -202,10 +201,6 @@ export class AcpRuntime {
     this.needsProjectionCheck = false; this.needsImport = false; this.skipPrefixImport = true;
   }
   hasLiveNativeControl(): boolean { return Boolean(this.native && this.acp && !this.closing && !this.acp.signal.aborted); }
-  async readQuotaSummary(signal?: AbortSignal): Promise<any> {
-    if (!this.hasLiveNativeControl()) throw new Error("AGY runtime has no active NativeControl.");
-    return this.native!.quotaSummary(signal);
-  }
 
   stream(model: Model<Api>, context: TranscriptContext, options: SimpleStreamOptions = {}): AssistantMessageEventStream {
     const stream = createAssistantMessageEventStream();
@@ -359,13 +354,11 @@ export class AcpRuntime {
       this.nativeSessionId = nativeId;
       await this.configure(loaded.configOptions ?? [], nativeId, effective.model, effective.thoughtLevel);
       this.native = new NativeControl(await this.acp.getNativeHttpPort());
-      registerLiveAcpRuntime(this);
       this.lastTrajectory = await this.sample(owner, nativeId);
       this.usage = new UsageLedger();
       this.usage.baseline(this.lastTrajectory);
     } else {
       await this.configure([], nativeId, effective.model, effective.thoughtLevel);
-      touchLiveAcpRuntime(this);
       this.lastTrajectory = await this.sample(owner, nativeId);
     }
     const startStep = Array.isArray(this.lastTrajectory?.steps) ? this.lastTrajectory.steps.length - 1 : undefined;
@@ -589,7 +582,6 @@ export class AcpRuntime {
     this.yieldQueued = true;
     this.enqueue(owner, async () => {
       try {
-        touchLiveAcpRuntime(this);
         const trajectory = await this.sample(owner);
         for (const call of this.queuedCalls.splice(0)) {
           if (this.exposedCalls.has(call.id)) continue;
@@ -613,7 +605,6 @@ export class AcpRuntime {
       return;
     }
     this.enqueue(owner, async () => {
-      touchLiveAcpRuntime(this);
       const trajectory = await this.sample(owner);
       this.usage.apply(owner.writer.output, trajectory, pricingForModel(owner.model.id), response.usage);
       if (response.stopReason === "cancelled" || owner.options.signal?.aborted) {
@@ -736,7 +727,6 @@ export class AcpRuntime {
       const result = await Promise.race([this.acp.cancel(this.flight.sessionId).then(() => true).catch(() => false),
         new Promise<false>(resolve => { timer = setTimeout(() => resolve(false), 5_000); })]);
       if (!result) { killAgyTree(this.acp); await this.acp.close(new Error("AGY did not acknowledge cancellation")); this.acp = undefined; this.nativeSessionId = undefined; this.native = undefined;
-        unregisterLiveAcpRuntime(this);
         this.processEnv = undefined; this.configOptions = []; this.permissionCalls.clear(); this.nativeUpdateSource = undefined; }
       this.bridge.cancelPending("AGY native prompt has stopped.");
       this.queuedCalls = []; this.exposedCalls.clear();
@@ -752,7 +742,6 @@ export class AcpRuntime {
     if (this.flight && !this.flight.settled) await this.stopNative();
     const sessionId = this.nativeSessionId;
     this.acp = undefined; this.nativeSessionId = undefined; this.native = undefined;
-    unregisterLiveAcpRuntime(this);
     try { if (sessionId) await acp.closeSession(sessionId); }
     finally { await acp.close(); untrackAgyChild(acp); }
   }
